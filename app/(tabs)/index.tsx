@@ -1,61 +1,72 @@
-import { Box, Heading, ScrollView, Text, VStack } from "@gluestack-ui/themed";
+import {
+  Box,
+  Button,
+  ButtonIcon,
+  HStack,
+  Heading,
+  ScrollView,
+  Text,
+  VStack,
+} from "@gluestack-ui/themed";
 import { SafeArea } from "../../components/layout/SafeArea";
 import { DailyCard } from "../../components/daily/DailyCard";
-import { ViewPreviousButton } from "../../components/daily/ViewPreviousButton";
 import { dailyItems } from "../../components/daily/data";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import { History } from "lucide-react-native";
+import { useState } from "react";
+import { Modal } from "@gluestack-ui/themed";
+import { PreviousDaysSheet } from "../../components/daily/PreviousDaysSheet";
 
-export default function TodayScreen() {
-  const handleViewPrevious = () => {
-    // Handle viewing previous days
-    console.log("View previous days");
-  };
+export default function DailyScreen() {
+  const [showPreviousDays, setShowPreviousDays] = useState(false);
 
   return (
     <SafeArea>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 80 }}
-      >
-        <Box px="$4" pt="$2" pb="$6" flex={1}>
-          <Animated.View entering={FadeIn.duration(600)}>
-            <VStack space="xl">
-              <VStack space="xs">
-                <Heading
-                  size="2xl"
-                  letterSpacing={-1}
-                  sx={{
-                    _dark: { color: "$textLight50" },
-                  }}
-                >
+      <ScrollView flex={1} showsVerticalScrollIndicator={false}>
+        <Box p="$4">
+          <VStack space="xl">
+            <VStack space="xs">
+              <HStack
+                justifyContent="space-between"
+                alignItems="center"
+                mb="$2"
+              >
+                <Heading size="xl" letterSpacing={-1}>
                   Things of the Day
                 </Heading>
-                <Text
-                  size="lg"
-                  color="$textLight500"
-                  sx={{
-                    _dark: { color: "$textLight400" },
-                  }}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onPress={() => setShowPreviousDays(true)}
                 >
-                  Your daily dose of inspiration
-                </Text>
-              </VStack>
+                  <ButtonIcon as={History} mr="$2" />
+                  <Button.Text>Previous Days</Button.Text>
+                </Button>
+              </HStack>
 
-              <VStack>
-                {dailyItems.map((item, index) => (
-                  <Animated.View
-                    key={index}
-                    entering={FadeInDown.duration(600).delay(index * 100)}
-                  >
-                    <DailyCard {...item} />
-                  </Animated.View>
-                ))}
-              </VStack>
+              <Text size="sm" color="$textLight500">
+                Your daily dose of inspiration and knowledge
+              </Text>
             </VStack>
-          </Animated.View>
+
+            <VStack space="md">
+              {dailyItems.map((item, index) => (
+                <DailyCard key={index} {...item} />
+              ))}
+            </VStack>
+          </VStack>
         </Box>
       </ScrollView>
-      <ViewPreviousButton onPress={handleViewPrevious} />
+
+      <Modal
+        isOpen={showPreviousDays}
+        onClose={() => setShowPreviousDays(false)}
+        avoidKeyboard
+        closeOnOverlayClick
+      >
+        <Modal.Content width="100%" height="90%">
+          <PreviousDaysSheet onClose={() => setShowPreviousDays(false)} />
+        </Modal.Content>
+      </Modal>
     </SafeArea>
   );
 }
