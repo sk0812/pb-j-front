@@ -1,43 +1,140 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
+import { Tabs } from "expo-router";
+import {
+  Calendar,
+  ListTodo,
+  TrendingUp,
+  Newspaper,
+  PlusCircle,
+} from "lucide-react-native";
+import React from "react";
+import { Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useColorScheme } from "@/hooks/useColorScheme";
+import TopBar from "@/components/TopBar";
+
+const AnimatedIcon = Animated.createAnimatedComponent(Calendar);
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
+        tabBarActiveTintColor: isDark ? "#fff" : "#000",
+        tabBarInactiveTintColor: isDark ? "#666" : "#999",
+        tabBarStyle: {
+          backgroundColor: isDark ? "#111" : "#fff",
+          borderTopWidth: 0,
+          elevation: 0,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 8,
+        },
+        header: () => <TopBar />,
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: "Today",
+          tabBarIcon: ({ color, focused }) => (
+            <Animated.View
+              entering={focused ? FadeIn.duration(200) : undefined}
+              exiting={!focused ? FadeOut.duration(200) : undefined}
+            >
+              <AnimatedIcon
+                size={24}
+                color={color}
+                style={{
+                  transform: [{ scale: focused ? 1.1 : 1 }],
+                }}
+              />
+            </Animated.View>
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="tasks"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: "Tasks",
+          tabBarIcon: ({ color, focused }) => (
+            <Animated.View
+              entering={focused ? FadeIn.duration(200) : undefined}
+              exiting={!focused ? FadeOut.duration(200) : undefined}
+            >
+              <ListTodo
+                size={24}
+                color={color}
+                style={{
+                  transform: [{ scale: focused ? 1.1 : 1 }],
+                }}
+              />
+            </Animated.View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="impact"
+        options={{
+          title: "Impact",
+          tabBarIcon: ({ color, focused }) => (
+            <Animated.View
+              entering={focused ? FadeIn.duration(200) : undefined}
+              exiting={!focused ? FadeOut.duration(200) : undefined}
+            >
+              <TrendingUp
+                size={24}
+                color={color}
+                style={{
+                  transform: [{ scale: focused ? 1.1 : 1 }],
+                }}
+              />
+            </Animated.View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="news"
+        options={{
+          title: "News",
+          tabBarIcon: ({ color, focused }) => (
+            <Animated.View
+              entering={focused ? FadeIn.duration(200) : undefined}
+              exiting={!focused ? FadeOut.duration(200) : undefined}
+            >
+              <Newspaper
+                size={24}
+                color={color}
+                style={{
+                  transform: [{ scale: focused ? 1.1 : 1 }],
+                }}
+              />
+            </Animated.View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="submit"
+        options={{
+          title: "Submit",
+          tabBarIcon: ({ color, focused }) => (
+            <Animated.View
+              entering={focused ? FadeIn.duration(200) : undefined}
+              exiting={!focused ? FadeOut.duration(200) : undefined}
+            >
+              <PlusCircle
+                size={24}
+                color={color}
+                style={{
+                  transform: [{ scale: focused ? 1.1 : 1 }],
+                }}
+              />
+            </Animated.View>
+          ),
         }}
       />
     </Tabs>
