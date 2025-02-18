@@ -1,0 +1,253 @@
+import React, { useState } from "react";
+import {
+  Button,
+  FormControl,
+  FormControlLabel,
+  FormControlLabelText,
+  FormControlError,
+  FormControlErrorText,
+  Heading,
+  Input,
+  InputField,
+  InputIcon,
+  InputSlot,
+  Pressable,
+  Text,
+  View,
+  VStack,
+  HStack,
+} from "@gluestack-ui/themed";
+import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Eye, EyeOff, ChevronLeft } from "lucide-react-native";
+import { StyleSheet } from "react-native";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const LoginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+type LoginData = z.infer<typeof LoginSchema>;
+
+export default function LoginScreen() {
+  const [showPassword, setShowPassword] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginData>({
+    resolver: zodResolver(LoginSchema),
+  });
+
+  const handleLogin = async (data: LoginData) => {
+    try {
+      // TODO: Implement login logic
+      console.log("Login:", data);
+    } catch (error) {
+      console.error("Login error:", error);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        {/* Back Button */}
+        <Button
+          variant="link"
+          onPress={() => router.back()}
+          p="$0"
+          style={styles.backButton}
+        >
+          <ChevronLeft size={28} color="#006AD4" />
+        </Button>
+
+        {/* Header Section */}
+        <VStack space="sm" mt="$6">
+          <Heading size="2xl" fontWeight="$semibold" letterSpacing={0.5}>
+            Welcome Back
+          </Heading>
+          <Text
+            size="lg"
+            color="$gray600"
+            letterSpacing={0.5}
+            style={styles.subtitle}
+          >
+            Sign in to continue
+          </Text>
+        </VStack>
+
+        {/* Form Section */}
+        <VStack space="xl" style={styles.form}>
+          <FormControl isInvalid={!!errors.email} size="lg" isRequired>
+            <FormControlLabel mb="$2">
+              <FormControlLabelText color="$gray700">
+                Email
+              </FormControlLabelText>
+            </FormControlLabel>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  size="xl"
+                  borderWidth={1}
+                  borderColor={
+                    errors.email ? "$red300" : value ? "$blue300" : "$gray200"
+                  }
+                  $focus-outlineColor="$blue400"
+                  borderRadius="$lg"
+                >
+                  <InputField
+                    placeholder="Enter your email"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={value}
+                    onChangeText={onChange}
+                    fontSize="$lg"
+                    px="$4"
+                    py="$3"
+                    placeholderTextColor="$gray400"
+                  />
+                </Input>
+              )}
+            />
+            {errors.email && (
+              <FormControlError>
+                <FormControlErrorText color="$red500">
+                  {errors.email.message}
+                </FormControlErrorText>
+              </FormControlError>
+            )}
+          </FormControl>
+
+          <FormControl isInvalid={!!errors.password} size="lg" isRequired>
+            <FormControlLabel mb="$2">
+              <FormControlLabelText color="$gray700">
+                Password
+              </FormControlLabelText>
+            </FormControlLabel>
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  size="xl"
+                  borderWidth={1}
+                  borderColor={
+                    errors.password
+                      ? "$red300"
+                      : value
+                      ? "$blue300"
+                      : "$gray200"
+                  }
+                  $focus-outlineColor="$blue400"
+                  borderRadius="$lg"
+                >
+                  <InputField
+                    placeholder="Enter your password"
+                    type={showPassword ? "text" : "password"}
+                    value={value}
+                    onChangeText={onChange}
+                    fontSize="$lg"
+                    px="$4"
+                    py="$3"
+                    placeholderTextColor="$gray400"
+                  />
+                  <InputSlot pr="$3">
+                    <Pressable onPress={() => setShowPassword(!showPassword)}>
+                      <InputIcon
+                        as={showPassword ? EyeOff : Eye}
+                        color="$gray400"
+                      />
+                    </Pressable>
+                  </InputSlot>
+                </Input>
+              )}
+            />
+            {errors.password && (
+              <FormControlError>
+                <FormControlErrorText color="$red500">
+                  {errors.password.message}
+                </FormControlErrorText>
+              </FormControlError>
+            )}
+          </FormControl>
+        </VStack>
+
+        {/* Action Buttons */}
+        <VStack space="md" style={styles.buttonContainer}>
+          <Button
+            size="xl"
+            backgroundColor="$blue500"
+            borderRadius="$2xl"
+            height={64}
+            onPress={handleSubmit(handleLogin)}
+            shadowColor="$blue500"
+            shadowOffset={{ width: 0, height: 4 }}
+            shadowOpacity={0.2}
+            shadowRadius={8}
+          >
+            <Button.Text fontWeight="$bold" size="lg" letterSpacing={0.5}>
+              Sign In
+            </Button.Text>
+          </Button>
+
+          <Pressable
+            style={styles.linkButton}
+            onPress={() => router.push("/(auth)/signup/step1")}
+          >
+            <Text style={styles.linkText}>
+              Don't have an account?{" "}
+              <Text color="$blue500" fontWeight="$bold">
+                Sign Up
+              </Text>
+            </Text>
+          </Pressable>
+        </VStack>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "white",
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  subtitle: {
+    opacity: 0.8,
+  },
+  form: {
+    marginTop: 40,
+  },
+  buttonContainer: {
+    position: "absolute",
+    bottom: 48,
+    left: 24,
+    right: 24,
+  },
+  linkButton: {
+    alignItems: "center",
+    padding: 8,
+  },
+  linkText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+  },
+});
