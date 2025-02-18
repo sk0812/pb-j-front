@@ -24,6 +24,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ChevronLeft } from "lucide-react-native";
+import { useSignup } from "../../../contexts/SignupContext";
 
 const { width } = Dimensions.get("window");
 
@@ -36,6 +37,8 @@ const Step1Schema = z.object({
 type Step1Data = z.infer<typeof Step1Schema>;
 
 export default function SignupStep1() {
+  const { updateSignupData } = useSignup();
+
   const {
     control,
     handleSubmit,
@@ -45,7 +48,7 @@ export default function SignupStep1() {
   });
 
   const onSubmit = (data: Step1Data) => {
-    // Store data in global state or context
+    updateSignupData(data);
     router.push("/(auth)/signup/step2");
   };
 

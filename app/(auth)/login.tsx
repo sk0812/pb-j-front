@@ -24,6 +24,8 @@ import { StyleSheet } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { authApi } from "../../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const LoginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -34,6 +36,8 @@ type LoginData = z.infer<typeof LoginSchema>;
 
 export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const {
     control,
@@ -45,10 +49,25 @@ export default function LoginScreen() {
 
   const handleLogin = async (data: LoginData) => {
     try {
-      // TODO: Implement login logic
-      console.log("Login:", data);
-    } catch (error) {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await authApi.login(data.email, data.password);
+
+      // Store the token
+      await AsyncStorage.setItem("userToken", response.token);
+
+      // Navigate to the main app
+      router.replace("/(tabs)");
+    } catch (error: any) {
       console.error("Login error:", error);
+      setError(
+        error.response?.data?.error ||
+          error.message ||
+          "Invalid email or password. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -157,11 +176,12 @@ export default function LoginScreen() {
                     py="$3"
                     placeholderTextColor="$gray400"
                   />
-                  <InputSlot pr="$3">
+                  <InputSlot pr="$4">
                     <Pressable onPress={() => setShowPassword(!showPassword)}>
                       <InputIcon
                         as={showPassword ? EyeOff : Eye}
                         color="$gray400"
+                        size="lg"
                       />
                     </Pressable>
                   </InputSlot>
@@ -190,11 +210,18 @@ export default function LoginScreen() {
             shadowOffset={{ width: 0, height: 4 }}
             shadowOpacity={0.2}
             shadowRadius={8}
+            isDisabled={isLoading}
           >
             <Button.Text fontWeight="$bold" size="lg" letterSpacing={0.5}>
-              Sign In
+              {isLoading ? "Signing in..." : "Sign In"}
             </Button.Text>
           </Button>
+
+          {error && (
+            <Text color="$red500" textAlign="center" mb="$4">
+              {error}
+            </Text>
+          )}
 
           <Pressable
             style={styles.linkButton}

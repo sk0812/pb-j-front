@@ -30,6 +30,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ChevronLeft, Calendar } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useSignup } from "../../../contexts/SignupContext";
 
 const { width } = Dimensions.get("window");
 
@@ -54,7 +55,7 @@ const Step2Schema = z.object({
     .string()
     .min(1, "Postcode is required")
     .regex(
-      /^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i,
+      /^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$/,
       "Please enter a valid UK postcode"
     )
     .transform((val) => val.toUpperCase().replace(/\s+/g, " ")),
@@ -63,8 +64,9 @@ const Step2Schema = z.object({
 type Step2Data = z.infer<typeof Step2Schema>;
 
 export default function SignupStep2() {
+  const { updateSignupData } = useSignup();
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [date, setDate] = useState<Date | null>(null);
+  const [date, setDate] = useState<Date | undefined>(undefined);
 
   const {
     control,
@@ -152,7 +154,7 @@ export default function SignupStep2() {
   };
 
   const onSubmit = (data: Step2Data) => {
-    // Store data in global state or context
+    updateSignupData(data);
     router.push("/(auth)/signup/step3");
   };
 
@@ -330,21 +332,12 @@ export default function SignupStep2() {
                   <InputField
                     placeholder="Enter postcode (e.g., SW1A 1AA)"
                     value={value}
-                    onChangeText={(text) => {
-                      // Format postcode as user types
-                      const formatted = text
-                        .toUpperCase()
-                        .replace(/[^A-Z0-9 ]/g, "")
-                        .replace(/(.{4})(?=.)/g, "$1 ")
-                        .trim();
-                      onChange(formatted);
-                    }}
+                    onChangeText={onChange}
                     autoCapitalize="characters"
                     fontSize="$lg"
                     px="$4"
                     py="$3"
                     placeholderTextColor="$gray400"
-                    maxLength={8}
                   />
                 </Input>
               )}

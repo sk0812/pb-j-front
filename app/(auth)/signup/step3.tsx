@@ -28,6 +28,9 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react-native";
+import { useSignup } from "../../../contexts/SignupContext";
+import { authApi } from "../../../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
 
@@ -53,8 +56,12 @@ const Step3Schema = z
 type Step3Data = z.infer<typeof Step3Schema>;
 
 export default function SignupStep3() {
+  const { signupData, clearSignupData } = useSignup();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const {
     control,
@@ -66,12 +73,44 @@ export default function SignupStep3() {
 
   const onSubmit = async (data: Step3Data) => {
     try {
-      // TODO: Implement signup with Supabase
-      console.log("Creating account:", data);
-      // Navigate to main app after successful signup
-      router.push("/(tabs)");
-    } catch (error) {
+      setIsLoading(true);
+      setError(null);
+
+      // Check if we have all required data
+      if (!signupData.email || !signupData.firstName || !signupData.lastName) {
+        setError(
+          "Missing required information. Please go back and fill in all fields."
+        );
+        return;
+      }
+
+      const response = await authApi.signup({
+        email: signupData.email,
+        password: data.password,
+        firstName: signupData.firstName,
+        lastName: signupData.lastName,
+        phoneNumber: signupData.phoneNumber,
+      });
+
+      // Clear signup data
+      clearSignupData();
+
+      // Show success message
+      setSuccess(true);
+
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        router.replace("/(auth)/login");
+      }, 2000);
+    } catch (error: any) {
       console.error("Signup error:", error);
+      setError(
+        error.response?.data?.error ||
+          error.message ||
+          "Failed to sign up. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -110,88 +149,149 @@ export default function SignupStep3() {
         </VStack>
 
         {/* Form */}
-        <VStack space="xl" style={styles.form}>
-          <FormControl isInvalid={!!errors.password} size="lg" isRequired>
-            <FormControlLabel>
-              <FormControlLabelText>Password</FormControlLabelText>
-            </FormControlLabel>
-            <Controller
-              control={control}
-              name="password"
-              render={({ field: { onChange, value } }) => (
-                <Input size="xl">
-                  <InputField
-                    placeholder="Create a strong password"
-                    type={showPassword ? "text" : "password"}
-                    value={value}
-                    onChangeText={onChange}
-                    fontSize="$lg"
-                  />
-                  <InputSlot onPress={() => setShowPassword(!showPassword)}>
-                    <InputIcon
-                      as={showPassword ? EyeOff : Eye}
-                      color="$gray500"
-                    />
-                  </InputSlot>
-                </Input>
-              )}
-            />
-            {errors.password ? (
-              <FormControlError>
-                <FormControlErrorText>
-                  {errors.password.message}
-                </FormControlErrorText>
-              </FormControlError>
-            ) : (
-              <FormControlHelper>
-                <FormControlHelperText>
-                  Must contain uppercase, lowercase, number, and special
-                  character
-                </FormControlHelperText>
-              </FormControlHelper>
-            )}
-          </FormControl>
-
-          <FormControl
-            isInvalid={!!errors.confirmPassword}
-            size="lg"
-            isRequired
+        {success ? (
+          <VStack
+            space="md"
+            alignItems="center"
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              paddingBottom: 100,
+            }}
           >
-            <FormControlLabel>
-              <FormControlLabelText>Confirm Password</FormControlLabelText>
-            </FormControlLabel>
-            <Controller
-              control={control}
-              name="confirmPassword"
-              render={({ field: { onChange, value } }) => (
-                <Input size="xl">
-                  <InputField
-                    placeholder="Confirm your password"
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={value}
-                    onChangeText={onChange}
-                    fontSize="$lg"
-                  />
-                  <InputSlot
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            <Text color="$green500" fontSize="$xl" fontWeight="$bold">
+              Account created successfully!
+            </Text>
+            <Text color="$gray600" textAlign="center">
+              Redirecting you to login...
+            </Text>
+          </VStack>
+        ) : (
+          <VStack space="xl" style={styles.form}>
+            <FormControl isInvalid={!!errors.password} size="lg" isRequired>
+              <FormControlLabel>
+                <FormControlLabelText color="$gray700">
+                  Password
+                </FormControlLabelText>
+              </FormControlLabel>
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { onChange, value } }) => (
+                  <Input
+                    size="xl"
+                    borderWidth={1}
+                    borderColor={
+                      errors.password
+                        ? "$red300"
+                        : value
+                        ? "$blue300"
+                        : "$gray200"
+                    }
+                    $focus-outlineColor="$blue400"
+                    borderRadius="$lg"
                   >
-                    <InputIcon
-                      as={showConfirmPassword ? EyeOff : Eye}
-                      color="$gray500"
+                    <InputField
+                      placeholder="Create a strong password"
+                      type={showPassword ? "text" : "password"}
+                      value={value}
+                      onChangeText={onChange}
+                      fontSize="$lg"
+                      px="$4"
+                      py="$3"
+                      placeholderTextColor="$gray400"
                     />
-                  </InputSlot>
-                </Input>
+                    <InputSlot pr="$4">
+                      <Pressable onPress={() => setShowPassword(!showPassword)}>
+                        <InputIcon
+                          as={showPassword ? EyeOff : Eye}
+                          color="$gray400"
+                          size="lg"
+                        />
+                      </Pressable>
+                    </InputSlot>
+                  </Input>
+                )}
+              />
+              {errors.password ? (
+                <FormControlError>
+                  <FormControlErrorText color="$red500">
+                    {errors.password.message}
+                  </FormControlErrorText>
+                </FormControlError>
+              ) : (
+                <FormControlHelper>
+                  <FormControlHelperText color="$gray600">
+                    Must contain uppercase, lowercase, number, and special
+                    character
+                  </FormControlHelperText>
+                </FormControlHelper>
               )}
-            />
-            {errors.confirmPassword && (
-              <FormControlError>
-                <FormControlErrorText>
-                  {errors.confirmPassword.message}
-                </FormControlErrorText>
-              </FormControlError>
-            )}
-          </FormControl>
-        </VStack>
+            </FormControl>
+
+            <FormControl
+              isInvalid={!!errors.confirmPassword}
+              size="lg"
+              isRequired
+            >
+              <FormControlLabel>
+                <FormControlLabelText color="$gray700">
+                  Confirm Password
+                </FormControlLabelText>
+              </FormControlLabel>
+              <Controller
+                control={control}
+                name="confirmPassword"
+                render={({ field: { onChange, value } }) => (
+                  <Input
+                    size="xl"
+                    borderWidth={1}
+                    borderColor={
+                      errors.confirmPassword
+                        ? "$red300"
+                        : value
+                        ? "$blue300"
+                        : "$gray200"
+                    }
+                    $focus-outlineColor="$blue400"
+                    borderRadius="$lg"
+                  >
+                    <InputField
+                      placeholder="Confirm your password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={value}
+                      onChangeText={onChange}
+                      fontSize="$lg"
+                      px="$4"
+                      py="$3"
+                      placeholderTextColor="$gray400"
+                    />
+                    <InputSlot pr="$4">
+                      <Pressable
+                        onPress={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                      >
+                        <InputIcon
+                          as={showConfirmPassword ? EyeOff : Eye}
+                          color="$gray400"
+                          size="lg"
+                        />
+                      </Pressable>
+                    </InputSlot>
+                  </Input>
+                )}
+              />
+              {errors.confirmPassword && (
+                <FormControlError>
+                  <FormControlErrorText color="$red500">
+                    {errors.confirmPassword.message}
+                  </FormControlErrorText>
+                </FormControlError>
+              )}
+            </FormControl>
+          </VStack>
+        )}
 
         {/* Action Button */}
         <Button
@@ -205,11 +305,18 @@ export default function SignupStep3() {
           shadowOffset={{ width: 0, height: 4 }}
           shadowOpacity={0.2}
           shadowRadius={8}
+          isDisabled={isLoading || success}
         >
           <Button.Text fontWeight="$semibold" size="lg" letterSpacing={0.5}>
-            Create Account
+            {isLoading ? "Creating Account..." : "Create Account"}
           </Button.Text>
         </Button>
+
+        {error && (
+          <Text color="$red500" textAlign="center" style={styles.errorText}>
+            {error}
+          </Text>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -239,5 +346,16 @@ const styles = StyleSheet.create({
     bottom: 48,
     left: 24,
     right: 24,
+  },
+  errorText: {
+    position: "absolute",
+    bottom: 120,
+    left: 24,
+    right: 24,
+  },
+  successContainer: {
+    flex: 1,
+    justifyContent: "center",
+    paddingBottom: 100,
   },
 });
