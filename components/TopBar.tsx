@@ -59,7 +59,7 @@ export default function TopBar() {
             fontWeight="$bold"
             color={isDark ? "$textLight50" : "$textDark900"}
           >
-            Better UK
+            Beatitude
           </Text>
 
           <Pressable onPress={() => setShowProfile(true)}>
